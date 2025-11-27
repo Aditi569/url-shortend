@@ -1,31 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-
-// File-based storage 
-const DATA_FILE = path.join(process.cwd(), 'links-data.json');
-
-const getLinksStore = () => {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = fs.readFileSync(DATA_FILE, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (err) {
-    console.error('Error reading data file:', err);
-  }
-  return {};
-};
-
-const saveLinksStore = (data) => {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving data file:', err);
-  }
-};
+import { kv } from '@vercel/kv';
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -34,11 +9,17 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // GET - links
+  // GET - Fetch all links
   if (req.method === 'GET') {
     try {
-      const linksStore = getLinksStore();
-      const links = Object.values(linksStore);
+      const keys = await kv.keys('link:*');
+      const links = [];
+
+      for (const key of keys) {
+        const link = await kv.get(key);
+        if (link) links.push(link);
+      }
+
       links.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       return res.status(200).json(links);
     } catch (error) {
@@ -50,25 +31,22 @@ export default async function handler(req, res) {
   // POST - Create new link
   if (req.method === 'POST') {
     try {
-      const linksStore = getLinksStore();
       const { originalUrl, customCode } = req.body;
 
       if (!originalUrl) {
         return res.status(400).json({ error: 'Original URL is required' });
       }
 
-      // Validate URL
       try {
         new URL(originalUrl);
       } catch {
         return res.status(400).json({ error: 'Invalid URL format' });
       }
 
-      // Generate or use custom code
       const code = customCode || generateCode();
 
-      // Check if code exists
-      if (linksStore[code]) {
+      const existing = await kv.get(`link:${code}`);
+      if (existing) {
         return res.status(409).json({ error: 'Custom code already exists' });
       }
 
@@ -80,8 +58,7 @@ export default async function handler(req, res) {
         last_clicked: null
       };
 
-      linksStore[code] = linkData;
-      saveLinksStore(linksStore);
+      await kv.set(`link:${code}`, linkData);
 
       const protocol = req.headers['x-forwarded-proto'] || 'http';
       const host = req.headers.host;
