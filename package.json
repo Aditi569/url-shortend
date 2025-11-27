@@ -1,0 +1,12 @@
+{
+  "name": "url-shortener",
+  "version": "1.0.0",
+  "description": "URL Shortener with Vercel",
+  "scripts": {
+    "start": "node public/app.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "nanoid": "^3.3.7"
+  }
+}

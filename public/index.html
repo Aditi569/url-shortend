@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shortener</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { 
+      color: #333; 
+      margin-bottom: 10px; 
+      text-align: center;
+      font-size: 2.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    button:hover { 
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    .message {
+      padding: 14px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .success { 
+      background: #d4edda; 
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error { 
+      background: #f8d7da; 
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .result {
+      background: linear-gradient(135deg, #667eea15, #764ba215);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 25px 0;
+      border: 2px solid #667eea;
+    }
+    .result strong {
+      display: block;
+      margin-bottom: 10px;
+      color: #667eea;
+    }
+    .result p {
+      font-family: monospace;
+      font-size: 18px;
+      color: #333;
+      word-break: break-all;
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    hr {
+      border: none;
+      border-top: 2px solid #e0e0e0;
+      margin: 40px 0;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    th { 
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    code {
+      background: #667eea15;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #667eea;
+      font-weight: 600;
+    }
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .delete-btn:hover { 
+      background: #c82333;
+      transform: scale(1.05);
+    }
+    .copy-btn {
+      background: #28a745;
+      margin-top: 5px;
+    }
+    .copy-btn:hover {
+      background: #218838;
+    }
+    .hidden { display: none; }
+    .search-box {
+      margin-bottom: 20px;
+    }
+    .loader {
+      text-align: center;
+      color: #667eea;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔗 URL Shortener</h1>
+    <p class="subtitle">Create short, memorable links in seconds</p>
+
+    <div id="createMessage"></div>
+
+    <div class="form-group">
+      <label for="originalUrl">Long URL</label>
+      <input 
+        type="url" 
+        id="originalUrl" 
+        placeholder="https://example.com/very/long/url/path" 
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="customCode">Custom Short Code (optional)</label>
+      <input 
+        type="text" 
+        id="customCode" 
+        placeholder="mycode123"
+        maxlength="20"
+      >
+    </div>
+
+    <button onclick="createLink()">✨ Shorten URL</button>
+
+    <div id="resultBox" class="result hidden">
+      <strong>🎉 Your shortened URL:</strong>
+      <p id="shortUrl"></p>
+      <button class="copy-btn" id="copyBtn">📋 Copy to Clipboard</button>
+    </div>
+
+    <hr>
+
+    <h2>📊 Your Links</h2>
+    <div class="search-box">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="🔍 Search links..."
+      >
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Short Code</th>
+            <th>Original URL</th>
+            <th>Clicks</th>
+            <th>Last Clicked</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="5" class="loader">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
